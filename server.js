@@ -4,7 +4,7 @@ const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 require('dotenv').config();
 
-const app = express();
+const app = WebApp = express();
 const PORT = 3000;
 
 // Middleware
@@ -31,22 +31,24 @@ app.post('/api/telemetry', async (req, res) => {
 
     console.log(`[Telemetry] Device: ${device_id}, Event: ${event_type}, Sensor: ${sensor}`);
 
-    // 1. Записываем событие в лог
+    // 1. Записываем событие в лог (таблица events)
     const { error: eventError } = await supabase
       .from('events')
       .insert([{ device_id, event_type, sensor, message }]);
 
     if (eventError) throw eventError;
 
-    // 2. Обновляем текущий режим в настройках
-    const { error: settingsError } = await supabase
-      .from('settings')
-      .upsert({ 
-        device_id, 
-        current_mode: event_type
-      }, { onConflict: 'device_id' });
+    // 2. Если режим изменен физической кнопкой на устройстве, синхронизируем состояние в settings
+    if (event_type === 'MODE_CHANGE') {
+      const { error: settingsError } = await supabase
+        .from('settings')
+        .upsert({ 
+          device_id, 
+          current_mode: message // В message передается JSON-строка состояния подсветки
+        }, { onConflict: 'device_id' });
 
-    if (settingsError) throw settingsError;
+      if (settingsError) throw settingsError;
+    }
 
     res.status(200).json({ status: 'success' });
   } catch (error) {
@@ -81,8 +83,19 @@ app.get('/api/status', async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(10);
 
+    // Парсим текущее состояние
+    let state = { mode: 'OFF', color: '#3b82f6', brightness: 80 };
+    if (settings && settings.current_mode) {
+      try {
+        state = JSON.parse(settings.current_mode);
+      } catch (e) {
+        // Поддержка старых записей
+        state = { mode: settings.current_mode, color: '#3b82f6', brightness: 80 };
+      }
+    }
+
     res.status(200).json({
-      mode: settings ? settings.current_mode : 'DISARMED',
+      state: state,
       events: events || []
     });
   } catch (error) {
@@ -104,7 +117,7 @@ app.post('/api/command', async (req, res) => {
 
     console.log(`[Command] Device: ${device_id}, Action: ${command}`);
 
-    // 1. Обновляем режим в БД. ESP32 увидит это при следующем GET запросе к /api/status
+    // 1. Обновляем режим в settings (храним состояние как JSON-строку)
     const { error: settingsError } = await supabase
       .from('settings')
       .upsert({ 
@@ -114,14 +127,21 @@ app.post('/api/command', async (req, res) => {
 
     if (settingsError) throw settingsError;
 
-    // 2. Записываем команду в журнал событий, чтобы пользователь видел её на сайте
+    // Попытаемся декодировать для красивого лога
+    let logMessage = `Выполнена команда: ${command}`;
+    try {
+      const stateObj = JSON.parse(command);
+      logMessage = `Смена режима на ${stateObj.mode} (Яркость: ${stateObj.brightness}%, Цвет: ${stateObj.color})`;
+    } catch (e) {}
+
+    // 2. Записываем команду в журнал событий
     const { error: eventError } = await supabase
       .from('events')
       .insert([{ 
         device_id, 
         event_type: 'COMMAND', 
         sensor: 'WEB_UI', 
-        message: `Выполнена команда: ${command}` 
+        message: logMessage 
       }]);
 
     if (eventError) throw eventError;
@@ -134,5 +154,5 @@ app.post('/api/command', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Локальный сервер сигнализации запущен на http://localhost:${PORT}`);
+  console.log(`Сервер фоновой подсветки монитора запущен на http://localhost:${PORT}`);
 });

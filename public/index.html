@@ -3,53 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SECURE HOME | Система сигнализации</title>
+    <title>AMBIENT GLOW | Контроль фоновой подсветки</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="glow-bg"></div>
     <div class="container">
         <header>
-            <h1>SECURE<span>HOME</span></h1>
-            <div id="status-badge" class="status-disarmed">СИСТЕМА СНЯТА С ОХРАНЫ</div>
+            <h1>AMBIENT<span>GLOW</span></h1>
+            <p class="subtitle">Интерактивная фоновая подсветка ЖК-монитора</p>
+            <div id="status-badge" class="status-off">Режим: Выключен</div>
         </header>
 
-        <main>
-            <!-- Блок управления -->
-            <section class="control-panel card">
-                <h2>УПРАВЛЕНИЕ</h2>
-                <div class="button-group">
-                    <button id="btn-arm" class="btn btn-yellow">ПОСТАВИТЬ НА ОХРАНУ</button>
-                    <button id="btn-disarm" class="btn btn-green">СНЯТЬ С ОХРАНЫ</button>
-                    <button id="btn-test" class="btn btn-red">ТЕСТ ТРЕВОГИ</button>
-                    <button id="btn-reset" class="btn btn-red">СБРОС ТРЕВОГИ</button>
-                </div>
-                <audio id="alarm-sound" src="alarm.mp3" loop></audio>
-            </section>
+        <main class="grid-layout">
+            <!-- Левая колонка: Управление и Настройки -->
+            <div class="left-column">
+                <!-- Панель режимов -->
+                <section class="card control-panel">
+                    <h2>Режим работы</h2>
+                    <div class="mode-grid">
+                        <button id="btn-mode-off" class="btn btn-mode active" data-mode="OFF">Выключить</button>
+                        <button id="btn-mode-static" class="btn btn-mode" data-mode="STATIC">Статический</button>
+                        <button id="btn-mode-rainbow" class="btn btn-mode" data-mode="RAINBOW">Радуга</button>
+                        <button id="btn-mode-auto" class="btn btn-mode" data-mode="AUTO">Автояркость</button>
+                        <button id="btn-mode-sync" class="btn btn-mode" data-mode="SYNC">Синхронизация</button>
+                    </div>
+                </section>
 
-            <!-- Блок логов -->
-            <section class="events-panel card">
-                <h2>ЖУРНАЛ СОБЫТИЙ</h2>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Время</th>
-                                <th>Событие</th>
-                                <th>Датчик</th>
-                                <th>Сообщение</th>
-                            </tr>
-                        </thead>
-                        <tbody id="events-body">
-                            <!-- Сюда будут добавляться строки из JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+                <!-- Панель параметров -->
+                <section id="params-panel" class="card params-panel">
+                    <h2>Параметры подсветки</h2>
+                    <div class="param-group" id="color-picker-group">
+                        <label for="color-picker">Цвет подсветки</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="color-picker" value="#3b82f6">
+                            <span id="color-val">#3b82f6</span>
+                        </div>
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="brightness-slider">Яркость: <span id="brightness-val">80%</span></label>
+                        <input type="range" id="brightness-slider" min="10" max="100" value="80">
+                    </div>
+
+                    <div class="param-group sync-group" id="sync-control-group" style="display: none;">
+                        <div class="toggle-wrapper">
+                            <label class="switch">
+                                <input type="checkbox" id="sync-simulation-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label">Запустить симуляцию экрана</span>
+                        </div>
+                        <p class="helper-text">Сайт будет имитировать воспроизведение динамического видеоряда, отправляя меняющиеся цвета на 4 стороны монитора.</p>
+                    </div>
+                </section>
+
+                <!-- Состояние датчиков железа -->
+                <section class="card sensor-panel">
+                    <h2>Состояние устройства (ESP32)</h2>
+                    <div class="sensor-grid">
+                        <div class="sensor-item">
+                            <span class="sensor-label">Датчик освещенности (LDR):</span>
+                            <div class="sensor-value-row">
+                                <span id="ldr-value" class="sensor-value">--</span>
+                                <span class="sensor-unit">ADC</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div id="ldr-progress" class="progress-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="sensor-item">
+                            <span class="sensor-label">Потенциометр (Регулятор):</span>
+                            <div class="sensor-value-row">
+                                <span id="pot-value" class="sensor-value">--</span>
+                                <span class="sensor-unit">ADC</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Правая колонка: Монитор и Логи -->
+            <div class="right-column">
+                <!-- Визуализация монитора -->
+                <section class="card preview-panel">
+                    <h2>Визуализация подсветки</h2>
+                    <div class="monitor-visualizer-container">
+                        <div id="monitor-frame" class="monitor-frame">
+                            <div class="screen-content" id="screen-content">
+                                <div class="screen-logo">AMBIENT GLOW</div>
+                            </div>
+                            <div class="monitor-stand"></div>
+                            <div class="monitor-base"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Журнал событий -->
+                <section class="card events-panel">
+                    <h2>Журнал событий</h2>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Время</th>
+                                    <th>Источник</th>
+                                    <th>Событие</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-body">
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: #64748b;">Загрузка данных...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <footer>
-            <p>Система управления домашней сигнализацией 2026. Выполнил студент группы КС-23-2 Чистяков Андрей</p>
+            <p>Система управления интерактивной фоновой подсветкой ЖК-монитора 2026. Выполнил студент группы КС-23-2 Чистяков Андрей</p>
         </footer>
     </div>
     <script src="app.js"></script>

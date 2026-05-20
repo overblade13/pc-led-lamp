@@ -1,54 +1,92 @@
 {
   "version": 1,
-  "author": "Uri Shaked",
+  "author": "Chistyakov Andrey",
   "editor": "wokwi",
   "parts": [
     { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -48, "left": -91.2, "attrs": {} },
-    { "type": "wokwi-pir-motion-sensor", "id": "pir1", "top": -220, "left": -120, "attrs": {} },
     {
-      "type": "wokwi-pushbutton",
-      "id": "btn_door",
-      "top": -40,
+      "type": "wokwi-led-strip",
+      "id": "led_top",
+      "top": -250,
+      "left": -120,
+      "attrs": { "pixels": "8" }
+    },
+    {
+      "type": "wokwi-led-strip",
+      "id": "led_right",
+      "top": -150,
+      "left": 150,
+      "rotate": 90,
+      "attrs": { "pixels": "4" }
+    },
+    {
+      "type": "wokwi-led-strip",
+      "id": "led_bottom",
+      "top": 50,
+      "left": -120,
+      "attrs": { "pixels": "8" }
+    },
+    {
+      "type": "wokwi-led-strip",
+      "id": "led_left",
+      "top": -150,
       "left": -230,
-      "attrs": { "color": "blue", "label": "Door Sensor" }
+      "rotate": 90,
+      "attrs": { "pixels": "4" }
+    },
+    { "type": "wokwi-pir-motion-sensor", "id": "pir1", "top": -380, "left": -350, "attrs": { "disable": "1" } },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr1",
+      "top": 150,
+      "left": -200,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot1",
+      "top": 150,
+      "left": 50,
+      "attrs": { "value": "500" }
     },
     {
       "type": "wokwi-pushbutton",
-      "id": "btn_ctrl",
-      "top": 80,
-      "left": -230,
-      "attrs": { "color": "green", "label": "Control" }
-    },
-    { "type": "wokwi-led", "id": "led_red", "top": -120, "left": 150, "attrs": { "color": "red", "label": "ALARM" } },
-    { "type": "wokwi-led", "id": "led_yellow", "top": -40, "left": 150, "attrs": { "color": "yellow", "label": "ARMED" } },
-    { "type": "wokwi-led", "id": "led_green", "top": 40, "left": 150, "attrs": { "color": "green", "label": "DISARMED" } },
-    { "type": "wokwi-buzzer", "id": "bz1", "top": 120, "left": 50, "attrs": { "volume": "0.1" } }
+      "id": "btn_mode",
+      "top": 180,
+      "left": -80,
+      "attrs": { "color": "green", "label": "Mode" }
+    }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
     
-    [ "esp:GND.1", "pir1:GND", "black", [ "v0" ] ],
-    [ "esp:3V3", "pir1:VCC", "red", [ "v0" ] ],
-    [ "esp:13", "pir1:OUT", "green", [ "v0" ] ],
+    [ "esp:5V", "led_top:VCC", "red", [ "v0" ] ],
+    [ "esp:GND.2", "led_top:GND", "black", [ "v0" ] ],
+    [ "esp:13", "led_top:DIN", "green", [ "v0" ] ],
     
-    [ "esp:GND.1", "btn_door:1.l", "black", [ "v0" ] ],
-    [ "esp:12", "btn_door:2.r", "green", [ "v0" ] ],
+    [ "led_top:DOUT", "led_right:DIN", "green", [ "v0" ] ],
+    [ "led_top:VCC", "led_right:VCC", "red", [ "v0" ] ],
+    [ "led_top:GND", "led_right:GND", "black", [ "v0" ] ],
     
-    [ "esp:GND.1", "btn_ctrl:1.l", "black", [ "v0" ] ],
-    [ "esp:14", "btn_ctrl:2.r", "green", [ "v0" ] ],
+    [ "led_right:DOUT", "led_bottom:DIN", "green", [ "v0" ] ],
+    [ "led_right:VCC", "led_bottom:VCC", "red", [ "v0" ] ],
+    [ "led_right:GND", "led_bottom:GND", "black", [ "v0" ] ],
     
-    [ "esp:GND.2", "led_red:C", "black", [ "v0" ] ],
-    [ "esp:27", "led_red:A", "red", [ "v0" ] ],
+    [ "led_bottom:DOUT", "led_left:DIN", "green", [ "v0" ] ],
+    [ "led_bottom:VCC", "led_left:VCC", "red", [ "v0" ] ],
+    [ "led_bottom:GND", "led_left:GND", "black", [ "v0" ] ],
     
-    [ "esp:GND.2", "led_yellow:C", "black", [ "v0" ] ],
-    [ "esp:26", "led_yellow:A", "yellow", [ "v0" ] ],
+    [ "esp:GND.1", "ldr1:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "ldr1:VCC", "red", [ "v0" ] ],
+    [ "esp:34", "ldr1:AO", "green", [ "v0" ] ],
     
-    [ "esp:GND.2", "led_green:C", "black", [ "v0" ] ],
-    [ "esp:25", "led_green:A", "green", [ "v0" ] ],
+    [ "esp:GND.1", "pot1:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "pot1:VCC", "red", [ "v0" ] ],
+    [ "esp:35", "pot1:SIG", "green", [ "v0" ] ],
     
-    [ "esp:GND.2", "bz1:1", "black", [ "v0" ] ],
-    [ "esp:33", "bz1:2", "purple", [ "v0" ] ]
+    [ "esp:GND.1", "btn_mode:1.l", "black", [ "v0" ] ],
+    [ "esp:14", "btn_mode:2.r", "green", [ "v0" ] ]
   ],
   "dependencies": {}
 }
