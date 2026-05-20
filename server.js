@@ -75,13 +75,19 @@ app.get('/api/status', async (req, res) => {
       .eq('device_id', device_id)
       .single();
 
-    // 2. Получаем последние 10 событий
-    const { data: events, error: eventsError } = await supabase
-      .from('events')
-      .select('*')
-      .eq('device_id', device_id)
-      .order('created_at', { ascending: false })
-      .limit(10);
+    // 2. Получаем последние 10 событий (только если не запрошен only_state)
+    let events = [];
+    if (req.query.only_state !== 'true') {
+      const { data, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('device_id', device_id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (eventsError) throw eventsError;
+      events = data || [];
+    }
 
     // Парсим текущее состояние
     let state = { mode: 'OFF', color: '#3b82f6', brightness: 80 };
@@ -96,7 +102,7 @@ app.get('/api/status', async (req, res) => {
 
     res.status(200).json({
       state: state,
-      events: events || []
+      events: events
     });
   } catch (error) {
     console.error('Ошибка получения статуса:', error);

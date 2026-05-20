@@ -285,13 +285,20 @@ void sendTelemetry(String type, String sensor, String msg) {
 void fetchStatus() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    http.begin(serverUrl + "/status?device_id=" + deviceId);
+    http.begin(serverUrl + "/status?device_id=" + deviceId + "&only_state=true");
     int httpCode = http.GET();
     
     if (httpCode == 200) {
       String payload = http.getString();
       StaticJsonDocument<512> doc;
-      deserializeJson(doc, payload);
+      DeserializationError error = deserializeJson(doc, payload);
+      
+      if (error) {
+        Serial.print("JSON Deserialization failed: ");
+        Serial.println(error.c_str());
+        http.end();
+        return;
+      }
       
       JsonObject state = doc["state"];
       String modeStr = state["mode"];
