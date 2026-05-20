@@ -10,7 +10,7 @@ const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 // IP вашего компьютера (сервера). Замените при необходимости.
 const String serverUrl = "http://192.168.0.103:3000/api";
-const String deviceId = "c4957cfd-0a7e-4c37-8053-f9621610048e";
+const String deviceId = "bl";
 
 // ==========================================
 // 2. Настройки пинов

@@ -1,4 +1,4 @@
-const DEVICE_ID = 'c4957cfd-0a7e-4c37-8053-f9621610048e';
+const DEVICE_ID = 'bl';
 const API_URL = 'http://localhost:3000/api';
 
 // Состояние
